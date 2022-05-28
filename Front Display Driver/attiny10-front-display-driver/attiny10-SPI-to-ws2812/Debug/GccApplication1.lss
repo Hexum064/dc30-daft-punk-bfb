@@ -1,0 +1,122 @@
+
+GccApplication1.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000062  00000000  00000000  00000054  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00800040  00800040  000000b6  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .comment      00000030  00000000  00000000  000000b6  2**0
+                  CONTENTS, READONLY
+  3 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  000000e8  2**2
+                  CONTENTS, READONLY
+  4 .debug_aranges 00000038  00000000  00000000  00000124  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  5 .debug_info   00000412  00000000  00000000  0000015c  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_abbrev 00000388  00000000  00000000  0000056e  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_line   00000216  00000000  00000000  000008f6  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_frame  00000054  00000000  00000000  00000b0c  2**2
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_str    000002da  00000000  00000000  00000b60  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_loc    00000026  00000000  00000000  00000e3a  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_ranges 00000028  00000000  00000000  00000e60  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	0a c0       	rjmp	.+20     	; 0x16 <__ctors_end>
+   2:	11 c0       	rjmp	.+34     	; 0x26 <__bad_interrupt>
+   4:	10 c0       	rjmp	.+32     	; 0x26 <__bad_interrupt>
+   6:	0f c0       	rjmp	.+30     	; 0x26 <__bad_interrupt>
+   8:	0e c0       	rjmp	.+28     	; 0x26 <__bad_interrupt>
+   a:	0d c0       	rjmp	.+26     	; 0x26 <__bad_interrupt>
+   c:	0c c0       	rjmp	.+24     	; 0x26 <__bad_interrupt>
+   e:	0b c0       	rjmp	.+22     	; 0x26 <__bad_interrupt>
+  10:	0a c0       	rjmp	.+20     	; 0x26 <__bad_interrupt>
+  12:	09 c0       	rjmp	.+18     	; 0x26 <__bad_interrupt>
+  14:	08 c0       	rjmp	.+16     	; 0x26 <__bad_interrupt>
+
+00000016 <__ctors_end>:
+  16:	11 27       	eor	r17, r17
+  18:	1f bf       	out	0x3f, r17	; 63
+  1a:	cf e5       	ldi	r28, 0x5F	; 95
+  1c:	d0 e0       	ldi	r29, 0x00	; 0
+  1e:	de bf       	out	0x3e, r29	; 62
+  20:	cd bf       	out	0x3d, r28	; 61
+  22:	07 d0       	rcall	.+14     	; 0x32 <main>
+  24:	1c c0       	rjmp	.+56     	; 0x5e <_exit>
+
+00000026 <__bad_interrupt>:
+  26:	ec cf       	rjmp	.-40     	; 0x0 <__vectors>
+
+00000028 <init_clk>:
+}
+
+void init_io()
+{
+	//Init the outputs
+	DDRB = RGB_OUT;
+  28:	48 ed       	ldi	r20, 0xD8	; 216
+  2a:	4c bf       	out	0x3c, r20	; 60
+  2c:	16 bf       	out	0x36, r17	; 54
+  2e:	17 bf       	out	0x37, r17	; 55
+  30:	08 95       	ret
+
+00000032 <main>:
+	//EIMSK = EI_EN;
+}
+
+int main(void)
+{
+	init_clk();
+  32:	fa df       	rcall	.-12     	; 0x28 <init_clk>
+	
+	
+    /* Replace with your application code */
+    while (1) 
+    {
+		if ((PINB & clk_in_mask)) //If clk is high
+  34:	01 9b       	sbis	0x00, 1	; 0
+  36:	fe cf       	rjmp	.-4      	; 0x34 <main+0x2>
+		{
+			PORTB |= rgb_out_mask;
+  38:	42 b1       	in	r20, 0x02	; 2
+  3a:	44 60       	ori	r20, 0x04	; 4
+  3c:	42 b9       	out	0x02, r20	; 2
+	...
+			//Do some No Ops to burn a few cycles with the output pin high
+			asm("NOP");
+			asm("NOP");
+			asm("NOP");
+			asm("NOP");
+			asm("NOP");
+  46:	00 00       	nop
+			
+			if ((PINB & data_in_mask)) //If data is high, add some more no ops
+  48:	00 9b       	sbis	0x00, 0	; 0
+  4a:	04 c0       	rjmp	.+8      	; 0x54 <__SREG__+0x15>
+	...
+				
+			}
+			
+			//set the output to low until the next clock
+
+			PORTB ^= rgb_out_mask;
+  54:	52 b1       	in	r21, 0x02	; 2
+  56:	44 e0       	ldi	r20, 0x04	; 4
+  58:	45 27       	eor	r20, r21
+  5a:	42 b9       	out	0x02, r20	; 2
+  5c:	eb cf       	rjmp	.-42     	; 0x34 <main+0x2>
+
+0000005e <_exit>:
+  5e:	f8 94       	cli
+
+00000060 <__stop_program>:
+  60:	ff cf       	rjmp	.-2      	; 0x60 <__stop_program>

@@ -1,0 +1,775 @@
+
+GccApplication1.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000222  00000000  00000000  00000074  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .rodata       0000001c  00004222  00000222  00000296  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  2 .data         00000000  00800040  00800040  000002b2  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  3 .comment      00000030  00000000  00000000  000002b2  2**0
+                  CONTENTS, READONLY
+  4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  000002e4  2**2
+                  CONTENTS, READONLY
+  5 .debug_aranges 00000050  00000000  00000000  00000320  2**3
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_info   000005a8  00000000  00000000  00000370  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_abbrev 00000430  00000000  00000000  00000918  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_line   000007cb  00000000  00000000  00000d48  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_frame  00000044  00000000  00000000  00001514  2**2
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_str    0000032d  00000000  00000000  00001558  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_loc    00000091  00000000  00000000  00001885  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .debug_ranges 00000020  00000000  00000000  00001916  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	0a c0       	rjmp	.+20     	; 0x16 <__ctors_end>
+   2:	11 c0       	rjmp	.+34     	; 0x26 <__bad_interrupt>
+   4:	10 c0       	rjmp	.+32     	; 0x26 <__bad_interrupt>
+   6:	0f c0       	rjmp	.+30     	; 0x26 <__bad_interrupt>
+   8:	0e c0       	rjmp	.+28     	; 0x26 <__bad_interrupt>
+   a:	0d c0       	rjmp	.+26     	; 0x26 <__bad_interrupt>
+   c:	0c c0       	rjmp	.+24     	; 0x26 <__bad_interrupt>
+   e:	0b c0       	rjmp	.+22     	; 0x26 <__bad_interrupt>
+  10:	0a c0       	rjmp	.+20     	; 0x26 <__bad_interrupt>
+  12:	09 c0       	rjmp	.+18     	; 0x26 <__bad_interrupt>
+  14:	08 c0       	rjmp	.+16     	; 0x26 <__bad_interrupt>
+
+00000016 <__ctors_end>:
+  16:	11 27       	eor	r17, r17
+  18:	1f bf       	out	0x3f, r17	; 63
+  1a:	cf e5       	ldi	r28, 0x5F	; 95
+  1c:	d0 e0       	ldi	r29, 0x00	; 0
+  1e:	de bf       	out	0x3e, r29	; 62
+  20:	cd bf       	out	0x3d, r28	; 61
+  22:	ea d0       	rcall	.+468    	; 0x1f8 <main>
+  24:	fc c0       	rjmp	.+504    	; 0x21e <_exit>
+
+00000026 <__bad_interrupt>:
+  26:	ec cf       	rjmp	.-40     	; 0x0 <__vectors>
+
+00000028 <output_rgb>:
+	//r22 will be an initial offset for the right side color index
+
+
+
+
+	push r28
+  28:	cf 93       	push	r28
+
+
+	clr r18
+  2a:	22 27       	eor	r18, r18
+	clr r19
+  2c:	33 27       	eor	r19, r19
+	clr r20
+  2e:	44 27       	eor	r20, r20
+	clr r21
+  30:	55 27       	eor	r21, r21
+
+00000032 <main_loop_left_start>:
+main_loop_left_start:
+	//This is the start of the loop that outputs all of the LED data
+
+//Start LED 1 of 2
+	//Start off by getting the address for the colors array into X
+	ldi XL, lo8(colors)
+  32:	a6 e2       	ldi	r26, 0x26	; 38
+	ldi XH, hi8(colors)
+  34:	b2 e4       	ldi	r27, 0x42	; 66
+	//And the left-side color indexes array address into y
+	ldi YL, lo8(left_side_color_indexes)
+  36:	c2 e2       	ldi	r28, 0x22	; 34
+	ldi YH, hi8(left_side_color_indexes)
+  38:	d2 e4       	ldi	r29, 0x42	; 66
+
+	//output left side first
+	//Green, Red, and Blue are each loaded then output individually
+
+	//We only want to use the first 2 bits in r24 because the color index array is only 4 elements in size
+	andi r24, 0x03		//Only keep the first 2 bits
+  3a:	83 70       	andi	r24, 0x03	; 3
+	add	r28, r24		//Add the r24 offset to YL
+  3c:	c8 0f       	add	r28, r24
+	//Now we can load and inc 
+	ld r19, Y+			//This is just the index for the actual color
+  3e:	39 91       	ld	r19, Y+
+	//Now get the color
+	add r26, r19		//Add the offset from the color index array. 
+  40:	a3 0f       	add	r26, r19
+
+	ldi r21, 0x01		//Starting r21 a 1 instead of 0 so we can just check for bit 2 when inc and we only loop 3 times instead of 4
+  42:	51 e0       	ldi	r21, 0x01	; 1
+
+00000044 <byte_out_start_left_led_0>:
+
+byte_out_start_left_led_0:
+	//Now we can start outputting color data
+	ld r19, X+			//Load the first color byte into r19 and inc X
+  44:	3d 91       	ld	r19, X+
+
+00000046 <bit_out_start_left_led_0>:
+bit_out_start_left_led_0:
+	sbi 0x02, 2			//Set bit 2 in PORTB			
+  46:	12 9a       	sbi	0x02, 2	; 2
+	
+	//No NOP needed
+												
+	sbrs r19, 7		//bit 7 because ws2812b is MSB first. left shift will be applied 1 by 1											
+  48:	37 ff       	sbrs	r19, 7
+	rjmp clear_left_led_0										
+  4a:	06 c0       	rjmp	.+12     	; 0x58 <clear_left_led_0>
+	...
+
+00000058 <clear_left_led_0>:
+	nop
+	nop
+	
+
+clear_left_led_0:
+	cbi 0x02, 2		//Now clear bit 2 in the output and do more processing
+  58:	12 98       	cbi	0x02, 2	; 2
+	nop
+  5a:	00 00       	nop
+	nop
+  5c:	00 00       	nop
+
+	sbrc r19, 0		//If the bit is 0, then we want to wait longer so we skip the jump, else, we just continue the loop by jumping										
+  5e:	30 fd       	sbrc	r19, 0
+	rjmp continue_left_led_0
+  60:	02 c0       	rjmp	.+4      	; 0x66 <continue_left_led_0>
+	
+	//might need some NOPs here
+	nop
+  62:	00 00       	nop
+	...
+
+00000066 <continue_left_led_0>:
+	nop
+
+continue_left_led_0:	
+	inc r20
+  66:	43 95       	inc	r20
+	lsl r19			//Move to the next bit
+  68:	33 0f       	add	r19, r19
+	sbrs r20, 3		//If bit 3 is set, we counted to 8 so we are done.
+  6a:	43 ff       	sbrs	r20, 3
+	rjmp bit_out_start_left_led_0
+  6c:	ec cf       	rjmp	.-40     	; 0x46 <bit_out_start_left_led_0>
+
+	clr 20			//Reset the bit loop counter
+  6e:	44 27       	eor	r20, r20
+	inc r21			//inc to the next color byte
+  70:	53 95       	inc	r21
+	
+	sbrs r21, 2		//If bit 2 is set (r21 = 0x04), the we have output all the color bytes for the current color
+  72:	52 ff       	sbrs	r21, 2
+	rjmp byte_out_start_left_led_0
+  74:	e7 cf       	rjmp	.-50     	; 0x44 <byte_out_start_left_led_0>
+
+	clr r21
+  76:	55 27       	eor	r21, r21
+
+//Start LED 2 of 2
+	//Start off by getting the address for the colors array into X
+	ldi XL, lo8(colors)
+  78:	a6 e2       	ldi	r26, 0x26	; 38
+	ldi XH, hi8(colors)
+  7a:	b2 e4       	ldi	r27, 0x42	; 66
+	//And the left-side color indexes array address into y
+	ldi YL, lo8(left_side_color_indexes)
+  7c:	c2 e2       	ldi	r28, 0x22	; 34
+	ldi YH, hi8(left_side_color_indexes)
+  7e:	d2 e4       	ldi	r29, 0x42	; 66
+
+	add	r28, r24		//Add the r24 offset to YL
+  80:	c8 0f       	add	r28, r24
+	//Now we can load and inc 
+	ld r19, Y+			//This is just the index for the actual color
+  82:	39 91       	ld	r19, Y+
+	//Now get the color
+	add r26, r19		//Add the offset from the color index array. 
+  84:	a3 0f       	add	r26, r19
+
+	ldi r21, 0x01		//Starting r21 a 1 instead of 0 so we can just check for bit 2 when inc and we only loop 3 times instead of 4
+  86:	51 e0       	ldi	r21, 0x01	; 1
+
+00000088 <byte_out_start_left_led_1>:
+
+byte_out_start_left_led_1:
+	//Now we can start outputting color data
+	ld r19, X+			//Load the first color byte into r19 and inc X
+  88:	3d 91       	ld	r19, X+
+
+0000008a <bit_out_start_left_led_1>:
+bit_out_start_left_led_1:
+	sbi 0x02, 2			//Set bit 2 in PORTB			
+  8a:	12 9a       	sbi	0x02, 2	; 2
+	
+	//No NOP needed
+											
+	sbrs r19, 7		//bit 7 because ws2812b is MSB first. left shift will be applied 1 by 1											
+  8c:	37 ff       	sbrs	r19, 7
+	rjmp clear_left_led_1										
+  8e:	06 c0       	rjmp	.+12     	; 0x9c <clear_left_led_1>
+	...
+
+0000009c <clear_left_led_1>:
+	nop
+	nop
+
+
+clear_left_led_1:
+	cbi 0x02, 2		//Now clear bit 2 in the output and do more processing
+  9c:	12 98       	cbi	0x02, 2	; 2
+	nop
+  9e:	00 00       	nop
+	nop
+  a0:	00 00       	nop
+
+	sbrc r19, 0		//If the bit is 0, then we want to wait longer so we skip the jump, else, we just continue the loop by jumping										
+  a2:	30 fd       	sbrc	r19, 0
+	rjmp continue_left_led_1
+  a4:	02 c0       	rjmp	.+4      	; 0xaa <continue_left_led_1>
+	
+	//might need some NOPs here
+	nop
+  a6:	00 00       	nop
+	...
+
+000000aa <continue_left_led_1>:
+	nop
+
+continue_left_led_1:	
+	inc r20
+  aa:	43 95       	inc	r20
+	lsl r19			//Move to the next bit
+  ac:	33 0f       	add	r19, r19
+	sbrs r20, 3		//If bit 3 is set, we counted to 8 so we are done.
+  ae:	43 ff       	sbrs	r20, 3
+	rjmp bit_out_start_left_led_1
+  b0:	ec cf       	rjmp	.-40     	; 0x8a <bit_out_start_left_led_1>
+
+	clr 20			//Reset the bit loop counter
+  b2:	44 27       	eor	r20, r20
+	inc r21			//inc to the next color byte
+  b4:	53 95       	inc	r21
+	
+	sbrs r21, 2		//If bit 2 is set (r21 = 0x04), the we have output all the color bytes for the current color
+  b6:	52 ff       	sbrs	r21, 2
+	rjmp byte_out_start_left_led_1
+  b8:	e7 cf       	rjmp	.-50     	; 0x88 <byte_out_start_left_led_1>
+
+	inc r24			//Move to the next color
+  ba:	83 95       	inc	r24
+	clr r21
+  bc:	55 27       	eor	r21, r21
+
+	inc r18			//inc our LED loop counter
+  be:	23 95       	inc	r18
+	
+	sbrs r18, 2		//If bit 2 is set, that means we have gone through this loop 4 times and all of the left side LEDs should be set
+  c0:	22 ff       	sbrs	r18, 2
+	rjmp main_loop_left_start
+  c2:	b7 cf       	rjmp	.-146    	; 0x32 <main_loop_left_start>
+
+
+//This is the beginning of the right side lighting code
+//This side has 5 rows of 4 LEDs then 2 rows of 3 LEDs, so there will be a bit of extra loop counting
+
+	clr r19
+  c4:	33 27       	eor	r19, r19
+	clr r20
+  c6:	44 27       	eor	r20, r20
+	clr r21
+  c8:	55 27       	eor	r21, r21
+	ldi r18, 0x01 //Starting with 1 because we will be loading 7 LED rows (5 rows of 4 and 2 rows of 3), so this way we can check for bit 3 to be set
+  ca:	21 e0       	ldi	r18, 0x01	; 1
+
+000000cc <main_loop_right_start>:
+
+main_loop_right_start:	
+
+//Start LED 1 of 4
+	//Start off by getting the address for the colors array into X
+	ldi XL, lo8(colors)
+  cc:	a6 e2       	ldi	r26, 0x26	; 38
+	ldi XH, hi8(colors)
+  ce:	b2 e4       	ldi	r27, 0x42	; 66
+
+	//We only want to use the first 3 bits in r22 because the color array is only 8 elements in size
+	andi r22, 0x07		//Only keep the first 3 bits
+  d0:	67 70       	andi	r22, 0x07	; 7
+	add r26, r22		//Add the r22 offset to XL. Need to do it 3 times because we are jumping by 3 bytes
+  d2:	a6 0f       	add	r26, r22
+	add r26, r22
+  d4:	a6 0f       	add	r26, r22
+	add r26, r22
+  d6:	a6 0f       	add	r26, r22
+
+	ldi r21, 0x01		//Starting r21 a 1 instead of 0 so we can just check for bit 2 when inc and we only loop 3 times instead of 4
+  d8:	51 e0       	ldi	r21, 0x01	; 1
+
+000000da <byte_out_start_right_led_0>:
+
+byte_out_start_right_led_0:
+	//Now we can start outputting color data
+	ld r19, X+			//Load the first color byte into r19 and inc X
+  da:	3d 91       	ld	r19, X+
+
+000000dc <bit_out_start_right_led_0>:
+bit_out_start_right_led_0:
+	sbi 0x02, 2			//Set bit 2 in PORTB			
+  dc:	12 9a       	sbi	0x02, 2	; 2
+	
+	//No NOP needed
+												
+	sbrs r19, 7		//bit 7 because ws2812b is MSB first. left shift will be applied 1 by 1											
+  de:	37 ff       	sbrs	r19, 7
+	rjmp clear_right_led_0										
+  e0:	06 c0       	rjmp	.+12     	; 0xee <clear_right_led_0>
+	...
+
+000000ee <clear_right_led_0>:
+	nop
+	nop
+	
+
+clear_right_led_0:
+	cbi 0x02, 2		//Now clear bit 2 in the output and do more processing
+  ee:	12 98       	cbi	0x02, 2	; 2
+	nop
+  f0:	00 00       	nop
+	nop
+  f2:	00 00       	nop
+
+	sbrc r19, 0		//If the bit is 0, then we want to wait longer so we skip the jump, else, we just continue the loop by jumping										
+  f4:	30 fd       	sbrc	r19, 0
+	rjmp continue_left_led_0
+  f6:	b7 cf       	rjmp	.-146    	; 0x66 <continue_left_led_0>
+	
+	//might need some NOPs here
+	nop
+  f8:	00 00       	nop
+	...
+
+000000fc <continue_right_led_0>:
+	nop
+
+continue_right_led_0:	
+	inc r20
+  fc:	43 95       	inc	r20
+	lsl r19			//Move to the next bit
+  fe:	33 0f       	add	r19, r19
+	sbrs r20, 3		//If bit 3 is set, we counted to 8 so we are done.
+ 100:	43 ff       	sbrs	r20, 3
+	rjmp bit_out_start_right_led_0
+ 102:	ec cf       	rjmp	.-40     	; 0xdc <bit_out_start_right_led_0>
+
+	clr 20			//Reset the bit loop counter
+ 104:	44 27       	eor	r20, r20
+	inc r21			//inc to the next color byte
+ 106:	53 95       	inc	r21
+	
+	sbrs r21, 2		//If bit 2 is set (r21 = 0x04), the we have output all the color bytes for the current color
+ 108:	52 ff       	sbrs	r21, 2
+	rjmp byte_out_start_right_led_0
+ 10a:	e7 cf       	rjmp	.-50     	; 0xda <byte_out_start_right_led_0>
+
+	clr r21
+ 10c:	55 27       	eor	r21, r21
+
+//Start LED 2 of 4
+
+	//Start off by getting the address for the colors array into X
+	ldi XL, lo8(colors)
+ 10e:	a6 e2       	ldi	r26, 0x26	; 38
+	ldi XH, hi8(colors)
+ 110:	b2 e4       	ldi	r27, 0x42	; 66
+
+	//We only want to use the first 3 bits in r22 because the color array is only 8 elements in size
+	andi r22, 0x07		//Only keep the first 3 bits
+ 112:	67 70       	andi	r22, 0x07	; 7
+	add r26, r22		//Add the r22 offset to XL. Need to do it 3 times because we are jumping by 3 bytes
+ 114:	a6 0f       	add	r26, r22
+	add r26, r22
+ 116:	a6 0f       	add	r26, r22
+	add r26, r22
+ 118:	a6 0f       	add	r26, r22
+
+	ldi r21, 0x01		//Starting r21 a 1 instead of 0 so we can just check for bit 2 when inc and we only loop 3 times instead of 4
+ 11a:	51 e0       	ldi	r21, 0x01	; 1
+
+0000011c <byte_out_start_right_led_1>:
+
+byte_out_start_right_led_1:
+	//Now we can start outputting color data
+	ld r19, X+			//Load the first color byte into r19 and inc X
+ 11c:	3d 91       	ld	r19, X+
+
+0000011e <bit_out_start_right_led_1>:
+bit_out_start_right_led_1:
+	sbi 0x02, 2			//Set bit 2 in PORTB			
+ 11e:	12 9a       	sbi	0x02, 2	; 2
+	
+	//No NOP needed
+												
+	sbrs r19, 7		//bit 7 because ws2812b is MSB first. left shift will be applied 1 by 1											
+ 120:	37 ff       	sbrs	r19, 7
+	rjmp clear_right_led_1										
+ 122:	06 c0       	rjmp	.+12     	; 0x130 <clear_right_led_1>
+	...
+
+00000130 <clear_right_led_1>:
+	nop
+	nop
+	
+
+clear_right_led_1:
+	cbi 0x02, 2		//Now clear bit 2 in the output and do more processing
+ 130:	12 98       	cbi	0x02, 2	; 2
+	nop
+ 132:	00 00       	nop
+	nop
+ 134:	00 00       	nop
+
+	sbrc r19, 0		//If the bit is 0, then we want to wait longer so we skip the jump, else, we just continue the loop by jumping										
+ 136:	30 fd       	sbrc	r19, 0
+	rjmp continue_left_led_1
+ 138:	b8 cf       	rjmp	.-144    	; 0xaa <continue_left_led_1>
+	
+	//might need some NOPs here
+	nop
+ 13a:	00 00       	nop
+	...
+
+0000013e <continue_right_led_1>:
+	nop
+
+continue_right_led_1:	
+	inc r20
+ 13e:	43 95       	inc	r20
+	lsl r19			//Move to the next bit
+ 140:	33 0f       	add	r19, r19
+	sbrs r20, 3		//If bit 3 is set, we counted to 8 so we are done.
+ 142:	43 ff       	sbrs	r20, 3
+	rjmp bit_out_start_right_led_1
+ 144:	ec cf       	rjmp	.-40     	; 0x11e <bit_out_start_right_led_1>
+
+	clr 20			//Reset the bit loop counter
+ 146:	44 27       	eor	r20, r20
+	inc r21			//inc to the next color byte
+ 148:	53 95       	inc	r21
+	
+	sbrs r21, 2		//If bit 2 is set (r21 = 0x04), the we have output all the color bytes for the current color
+ 14a:	52 ff       	sbrs	r21, 2
+	rjmp byte_out_start_right_led_1
+ 14c:	e7 cf       	rjmp	.-50     	; 0x11c <byte_out_start_right_led_1>
+
+	clr r21
+ 14e:	55 27       	eor	r21, r21
+
+//Start LED 3 of 4
+
+	//Start off by getting the address for the colors array into X
+	ldi XL, lo8(colors)
+ 150:	a6 e2       	ldi	r26, 0x26	; 38
+	ldi XH, hi8(colors)
+ 152:	b2 e4       	ldi	r27, 0x42	; 66
+
+	//We only want to use the first 3 bits in r22 because the color array is only 8 elements in size
+	andi r22, 0x07		//Only keep the first 3 bits
+ 154:	67 70       	andi	r22, 0x07	; 7
+	add r26, r22		//Add the r22 offset to XL. Need to do it 3 times because we are jumping by 3 bytes
+ 156:	a6 0f       	add	r26, r22
+	add r26, r22
+ 158:	a6 0f       	add	r26, r22
+	add r26, r22
+ 15a:	a6 0f       	add	r26, r22
+
+	ldi r21, 0x01		//Starting r21 a 1 instead of 0 so we can just check for bit 2 when inc and we only loop 3 times instead of 4
+ 15c:	51 e0       	ldi	r21, 0x01	; 1
+
+0000015e <byte_out_start_right_led_2>:
+
+byte_out_start_right_led_2:
+	//Now we can start outputting color data
+	ld r19, X+			//Load the first color byte into r19 and inc X
+ 15e:	3d 91       	ld	r19, X+
+
+00000160 <bit_out_start_right_led_2>:
+bit_out_start_right_led_2:
+	sbi 0x02, 2			//Set bit 2 in PORTB			
+ 160:	12 9a       	sbi	0x02, 2	; 2
+	
+	//No NOP needed
+												
+	sbrs r19, 7		//bit 7 because ws2812b is MSB first. left shift will be applied 1 by 1											
+ 162:	37 ff       	sbrs	r19, 7
+	rjmp clear_right_led_2										
+ 164:	06 c0       	rjmp	.+12     	; 0x172 <clear_right_led_2>
+	...
+
+00000172 <clear_right_led_2>:
+	nop
+	nop
+	
+
+clear_right_led_2:
+	cbi 0x02, 2		//Now clear bit 2 in the output and do more processing
+ 172:	12 98       	cbi	0x02, 2	; 2
+	nop
+ 174:	00 00       	nop
+	nop
+ 176:	00 00       	nop
+
+	sbrc r19, 0		//If the bit is 0, then we want to wait longer so we skip the jump, else, we just continue the loop by jumping										
+ 178:	30 fd       	sbrc	r19, 0
+	rjmp continue_right_led_2
+ 17a:	02 c0       	rjmp	.+4      	; 0x180 <continue_right_led_2>
+	
+	//might need some NOPs here
+	nop
+ 17c:	00 00       	nop
+	...
+
+00000180 <continue_right_led_2>:
+	nop
+
+continue_right_led_2:	
+	inc r20
+ 180:	43 95       	inc	r20
+	lsl r19			//Move to the next bit
+ 182:	33 0f       	add	r19, r19
+	sbrs r20, 3		//If bit 3 is set, we counted to 8 so we are done.
+ 184:	43 ff       	sbrs	r20, 3
+	rjmp bit_out_start_right_led_2
+ 186:	ec cf       	rjmp	.-40     	; 0x160 <bit_out_start_right_led_2>
+
+	clr 20			//Reset the bit loop counter
+ 188:	44 27       	eor	r20, r20
+	inc r21			//inc to the next color byte
+ 18a:	53 95       	inc	r21
+	
+	sbrs r21, 2		//If bit 2 is set (r21 = 0x04), the we have output all the color bytes for the current color
+ 18c:	52 ff       	sbrs	r21, 2
+	rjmp byte_out_start_right_led_2
+ 18e:	e7 cf       	rjmp	.-50     	; 0x15e <byte_out_start_right_led_2>
+
+	clr r21
+ 190:	55 27       	eor	r21, r21
+
+	//if our LED counter, r18, >= 6 (1 based instead of 0), skip the last led since rows 6 and 7 only have 3 leds
+	cpi r18, 0x06
+ 192:	26 30       	cpi	r18, 0x06	; 6
+	brsh right_led_loop_end
+ 194:	00 f5       	brcc	.+64     	; 0x1d6 <right_led_loop_end>
+
+//Start LED 4 of 4
+	//Start off by getting the address for the colors array into X
+	ldi XL, lo8(colors)
+ 196:	a6 e2       	ldi	r26, 0x26	; 38
+	ldi XH, hi8(colors)
+ 198:	b2 e4       	ldi	r27, 0x42	; 66
+
+	//We only want to use the first 3 bits in r22 because the color array is only 8 elements in size
+	andi r22, 0x07		//Only keep the first 3 bits
+ 19a:	67 70       	andi	r22, 0x07	; 7
+	add r26, r22		//Add the r22 offset to XL. Need to do it 3 times because we are jumping by 3 bytes
+ 19c:	a6 0f       	add	r26, r22
+	add r26, r22
+ 19e:	a6 0f       	add	r26, r22
+	add r26, r22
+ 1a0:	a6 0f       	add	r26, r22
+
+	ldi r21, 0x01		//Starting r21 a 1 instead of 0 so we can just check for bit 2 when inc and we only loop 3 times instead of 4
+ 1a2:	51 e0       	ldi	r21, 0x01	; 1
+
+000001a4 <byte_out_start_right_led_3>:
+
+byte_out_start_right_led_3:
+	//Now we can start outputting color data
+	ld r19, X+			//Load the first color byte into r19 and inc X
+ 1a4:	3d 91       	ld	r19, X+
+
+000001a6 <bit_out_start_right_led_3>:
+bit_out_start_right_led_3:
+	sbi 0x02, 2			//Set bit 2 in PORTB			
+ 1a6:	12 9a       	sbi	0x02, 2	; 2
+	
+	//No NOP needed
+												
+	sbrs r19, 7		//bit 7 because ws2812b is MSB first. left shift will be applied 1 by 1											
+ 1a8:	37 ff       	sbrs	r19, 7
+	rjmp clear_right_led_3										
+ 1aa:	06 c0       	rjmp	.+12     	; 0x1b8 <clear_right_led_3>
+	...
+
+000001b8 <clear_right_led_3>:
+	nop
+	nop
+	
+
+clear_right_led_3:
+	cbi 0x02, 2		//Now clear bit 2 in the output and do more processing
+ 1b8:	12 98       	cbi	0x02, 2	; 2
+	nop
+ 1ba:	00 00       	nop
+	nop
+ 1bc:	00 00       	nop
+
+	sbrc r19, 0		//If the bit is 0, then we want to wait longer so we skip the jump, else, we just continue the loop by jumping										
+ 1be:	30 fd       	sbrc	r19, 0
+	rjmp continue_right_led_3
+ 1c0:	02 c0       	rjmp	.+4      	; 0x1c6 <continue_right_led_3>
+	
+	//might need some NOPs here
+	nop
+ 1c2:	00 00       	nop
+	...
+
+000001c6 <continue_right_led_3>:
+	nop
+
+continue_right_led_3:	
+	inc r20
+ 1c6:	43 95       	inc	r20
+	lsl r19			//Move to the next bit
+ 1c8:	33 0f       	add	r19, r19
+	sbrs r20, 3		//If bit 3 is set, we counted to 8 so we are done.
+ 1ca:	43 ff       	sbrs	r20, 3
+	rjmp bit_out_start_right_led_3
+ 1cc:	ec cf       	rjmp	.-40     	; 0x1a6 <bit_out_start_right_led_3>
+
+	clr 20			//Reset the bit loop counter
+ 1ce:	44 27       	eor	r20, r20
+	inc r21			//inc to the next color byte
+ 1d0:	53 95       	inc	r21
+	
+	sbrs r21, 2		//If bit 2 is set (r21 = 0x04), the we have output all the color bytes for the current color
+ 1d2:	52 ff       	sbrs	r21, 2
+	rjmp byte_out_start_right_led_3
+ 1d4:	e7 cf       	rjmp	.-50     	; 0x1a4 <byte_out_start_right_led_3>
+
+000001d6 <right_led_loop_end>:
+
+right_led_loop_end:
+	
+	clr r21
+ 1d6:	55 27       	eor	r21, r21
+
+	inc r22			//Move to the next color
+ 1d8:	63 95       	inc	r22
+	inc r18			//inc our LED loop counter
+ 1da:	23 95       	inc	r18
+
+
+	sbrs r18, 3		//If bit 3 is set, that means we have gone through this loop 5 (+ our starting 3) times and all of the left side LEDs should be set
+ 1dc:	23 ff       	sbrs	r18, 3
+	rjmp main_loop_right_start
+ 1de:	76 cf       	rjmp	.-276    	; 0xcc <main_loop_right_start>
+
+	pop r28
+ 1e0:	cf 91       	pop	r28
+
+	ret
+ 1e2:	08 95       	ret
+
+000001e4 <init_clk>:
+	6 * 3, 4 * 3, 3 * 3, 1 * 3 //Everything is * 3 because there are 3 bytes per color
+};
+
+void init_clk()
+{
+	OSCCAL =  208; //Calibrate for 12MHz
+ 1e4:	40 ed       	ldi	r20, 0xD0	; 208
+ 1e6:	49 bf       	out	0x39, r20	; 57
+	// Set CPU speed by setting clock prescalar:
+	// CCP register must first be written with the correct signature - 0xD8
+	CCP = 0xD8;
+ 1e8:	48 ed       	ldi	r20, 0xD8	; 216
+ 1ea:	4c bf       	out	0x3c, r20	; 60
+	//  CLKPS[3:0] sets the clock division factor
+	CLKPSR = 0; // 0000 (1)
+ 1ec:	16 bf       	out	0x36, r17	; 54
+	CLKMSR = CLKMS0; //Make sure we are using the interal 8Mhz
+ 1ee:	17 bf       	out	0x37, r17	; 55
+ 1f0:	08 95       	ret
+
+000001f2 <init_io>:
+}
+
+void init_io()
+{
+	//Init the outputs
+	DDRB = 1 << RGB_OUT;
+ 1f2:	44 e0       	ldi	r20, 0x04	; 4
+ 1f4:	41 b9       	out	0x01, r20	; 1
+ 1f6:	08 95       	ret
+
+000001f8 <main>:
+
+extern void output_rgb(uint8_t left_offset, uint8_t right_offset);
+
+int main(void)
+{
+	init_clk();
+ 1f8:	f5 df       	rcall	.-22     	; 0x1e4 <init_clk>
+	init_io();
+ 1fa:	fb df       	rcall	.-10     	; 0x1f2 <init_io>
+	
+	uint8_t li = 0;
+	uint8_t ri = 0;
+ 1fc:	c0 e0       	ldi	r28, 0x00	; 0
+int main(void)
+{
+	init_clk();
+	init_io();
+	
+	uint8_t li = 0;
+ 1fe:	80 e0       	ldi	r24, 0x00	; 0
+	uint8_t ri = 0;
+	
+	while(1)
+	{
+		output_rgb(li, ri);
+ 200:	6c 2f       	mov	r22, r28
+ 202:	12 df       	rcall	.-476    	; 0x28 <output_rgb>
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+ 204:	4f e7       	ldi	r20, 0x7F	; 127
+ 206:	5f e4       	ldi	r21, 0x4F	; 79
+ 208:	62 e1       	ldi	r22, 0x12	; 18
+ 20a:	41 50       	subi	r20, 0x01	; 1
+ 20c:	50 40       	sbci	r21, 0x00	; 0
+ 20e:	60 40       	sbci	r22, 0x00	; 0
+ 210:	e1 f7       	brne	.-8      	; 0x20a <main+0x12>
+ 212:	00 c0       	rjmp	.+0      	; 0x214 <main+0x1c>
+ 214:	00 00       	nop
+		_delay_ms(500);
+		ri++;
+ 216:	cf 5f       	subi	r28, 0xFF	; 255
+		li = ri >> 1 ;
+ 218:	8c 2f       	mov	r24, r28
+ 21a:	86 95       	lsr	r24
+ 21c:	f1 cf       	rjmp	.-30     	; 0x200 <main+0x8>
+
+0000021e <_exit>:
+ 21e:	f8 94       	cli
+
+00000220 <__stop_program>:
+ 220:	ff cf       	rjmp	.-2      	; 0x220 <__stop_program>

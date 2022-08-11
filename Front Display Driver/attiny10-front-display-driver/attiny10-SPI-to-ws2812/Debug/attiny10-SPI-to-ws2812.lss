@@ -3,11 +3,11 @@ attiny10-SPI-to-ws2812.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         0000006c  00000000  00000000  00000054  2**1
+  0 .text         0000006a  00000000  00000000  00000054  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         00000000  00800040  00800040  000000c0  2**0
+  1 .data         00000000  00800040  00800040  000000be  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .comment      00000030  00000000  00000000  000000c0  2**0
+  2 .comment      00000030  00000000  00000000  000000be  2**0
                   CONTENTS, READONLY
   3 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  000000f0  2**2
                   CONTENTS, READONLY
@@ -17,13 +17,13 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING
   6 .debug_abbrev 0000039c  00000000  00000000  00000656  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_line   00000286  00000000  00000000  000009f2  2**0
+  7 .debug_line   00000280  00000000  00000000  000009f2  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_frame  00000044  00000000  00000000  00000c78  2**2
+  8 .debug_frame  00000044  00000000  00000000  00000c74  2**2
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_str    000002d6  00000000  00000000  00000cbc  2**0
+  9 .debug_str    000002d6  00000000  00000000  00000cb8  2**0
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_ranges 00000020  00000000  00000000  00000f92  2**0
+ 10 .debug_ranges 00000020  00000000  00000000  00000f8e  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -48,8 +48,8 @@ Disassembly of section .text:
   1c:	d0 e0       	ldi	r29, 0x00	; 0
   1e:	de bf       	out	0x3e, r29	; 62
   20:	cd bf       	out	0x3d, r28	; 61
-  22:	16 d0       	rcall	.+44     	; 0x50 <main>
-  24:	21 c0       	rjmp	.+66     	; 0x68 <_exit>
+  22:	15 d0       	rcall	.+42     	; 0x4e <main>
+  24:	20 c0       	rjmp	.+64     	; 0x66 <_exit>
 
 00000026 <__bad_interrupt>:
   26:	ec cf       	rjmp	.-40     	; 0x0 <__vectors>
@@ -73,94 +73,93 @@ main_loop:
 	RJMP main_loop
   2e:	fe cf       	rjmp	.-4      	; 0x2c <main_loop>
 
-	OUT 2, R16		//since we got here, we know the clock was set, so turn on the output
-  30:	02 b9       	out	0x02, r16	; 2
-
+	SBI 0x02, 2		//since we got here, we know the clock was set, so turn on the output
+  30:	12 9a       	sbi	0x02, 2	; 2
 
 
 	//todo: possibly add nops
 
-	SBIS 0, 0		//Look at the data bit and skip the jump to clear if it's set so the output is left on a bit longer
+	SBIS 0, 0		//Look at the data bit and skip the jump to clear if it's set so the output is left on a bit longer 
   32:	00 9b       	sbis	0x00, 0	; 0
 	RJMP clear
-  34:	09 c0       	rjmp	.+18     	; 0x48 <clear>
+  34:	08 c0       	rjmp	.+16     	; 0x46 <clear>
 	...
 
-00000044 <clear_and_restart>:
+00000042 <clear_and_restart>:
 	NOP
 	NOP
-	NOP
+	/*NOP*/
 
-clear_and_restart: //here we immediately start the loop again after clearing
-	OUT 2, R17
-  44:	12 b9       	out	0x02, r17	; 2
+clear_and_restart:	//here we immediately start the loop again after clearing
+	CBI 0x02, 2
+  42:	12 98       	cbi	0x02, 2	; 2
 	RJMP main_loop
-  46:	f2 cf       	rjmp	.-28     	; 0x2c <main_loop>
+  44:	f3 cf       	rjmp	.-26     	; 0x2c <main_loop>
 
-00000048 <clear>:
+00000046 <clear>:
 
 clear:	//Here we clear and wait for low clock
-	OUT 2, R17		//Clear the outputs
-  48:	12 b9       	out	0x02, r17	; 2
+	CBI 0x02, 2
+  46:	12 98       	cbi	0x02, 2	; 2
 
-0000004a <wait_for_clk_low>:
+00000048 <wait_for_clk_low>:
 
 wait_for_clk_low:
 	
 	SBIC 0, 1	//Wait till the clock goes low before we jump to the beginning of the loop
-  4a:	01 99       	sbic	0x00, 1	; 0
+  48:	01 99       	sbic	0x00, 1	; 0
 	RJMP wait_for_clk_low
-  4c:	fe cf       	rjmp	.-4      	; 0x4a <wait_for_clk_low>
+  4a:	fe cf       	rjmp	.-4      	; 0x48 <wait_for_clk_low>
 
 	RJMP main_loop
-  4e:	ee cf       	rjmp	.-36     	; 0x2c <main_loop>
+  4c:	ef cf       	rjmp	.-34     	; 0x2c <main_loop>
 
-00000050 <main>:
+0000004e <main>:
 	//
 //}
 
 void init_clk()
 {
-	OSCCAL =  208;
-  50:	40 ed       	ldi	r20, 0xD0	; 208
-  52:	49 bf       	out	0x39, r20	; 57
+	OSCCAL = 185;// 208; //Calibrate for 12MHz
+  4e:	49 eb       	ldi	r20, 0xB9	; 185
+  50:	49 bf       	out	0x39, r20	; 57
 	// Set CPU speed by setting clock prescalar:
 	// CCP register must first be written with the correct signature - 0xD8
 	CCP = 0xD8;
-  54:	48 ed       	ldi	r20, 0xD8	; 216
-  56:	4c bf       	out	0x3c, r20	; 60
+  52:	48 ed       	ldi	r20, 0xD8	; 216
+  54:	4c bf       	out	0x3c, r20	; 60
 	//  CLKPS[3:0] sets the clock division factor
 	CLKPSR = 0; // 0000 (1)	
-  58:	16 bf       	out	0x36, r17	; 54
+  56:	16 bf       	out	0x36, r17	; 54
 	CLKMSR = CLKMS0; //Make sure we are using the interal 8Mhz
-  5a:	17 bf       	out	0x37, r17	; 55
+  58:	17 bf       	out	0x37, r17	; 55
 }
 
 void init_io()
 {
 	//Init the outputs
 	DDRB = 1 << RGB_OUT;
-  5c:	44 e0       	ldi	r20, 0x04	; 4
-  5e:	41 b9       	out	0x01, r20	; 1
+  5a:	44 e0       	ldi	r20, 0x04	; 4
+  5c:	41 b9       	out	0x01, r20	; 1
 	
 	uint8_t clk_in_mask = 1 << CLK_IN;
 	uint8_t data_in_mask = 1 <<DATA_IN;
 	uint8_t rgb_out_mask = 1 << RGB_OUT;
 	
 	run();
-  60:	e3 df       	rcall	.-58     	; 0x28 <run>
+  5e:	e4 df       	rcall	.-56     	; 0x28 <run>
 			////set the output to low until the next clock
 //
 			//PORTB ^= rgb_out_mask;
 		//}
     //}
 }
-  62:	80 e0       	ldi	r24, 0x00	; 0
-  64:	90 e0       	ldi	r25, 0x00	; 0
-  66:	08 95       	ret
+  60:	80 e0       	ldi	r24, 0x00	; 0
+  62:	90 e0       	ldi	r25, 0x00	; 0
+  64:	08 95       	ret
 
-00000068 <_exit>:
-  68:	f8 94       	cli
+00000066 <_exit>:
+  66:	f8 94       	cli
 
-0000006a <__stop_program>:
-  6a:	ff cf       	rjmp	.-2      	; 0x6a <__stop_program>
+00000068 <__stop_program>:
+  68:	ff cf       	rjmp	.-2      	; 0x68 <__stop_program>

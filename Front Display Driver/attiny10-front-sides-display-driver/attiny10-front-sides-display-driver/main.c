@@ -10,12 +10,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-
 #define RGB_OUT DDB2
-#define RIGHT_RGB_LED_COUNT 8
-#define LEFT_RGB_LED_COUNT 26
-#define RGB_LED_COUNT (RIGHT_RGB_LED_COUNT + LEFT_RGB_LED_COUNT)
-#define RGB_LED_BYTE_COUNT (RGB_LED_COUNT * 3)
 
 
 const uint8_t colors[8][3] = 
@@ -66,9 +61,9 @@ int main(void)
 	while(1)
 	{
 		output_rgb(li, ri);
-		_delay_ms(500);
+		_delay_ms(200);
 		ri++;
-		li = ri >> 1 ;
+		li = ri >> 2 ;
 	}
 }
 

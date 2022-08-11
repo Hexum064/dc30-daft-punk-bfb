@@ -9,7 +9,7 @@
 
 
 #include <avr/io.h>
-#define F_CPU 8000000UL
+#define F_CPU 12000000UL
 #define DATA_IN DDB0
 #define CLK_IN DDB1
 #define RGB_OUT DDB2
@@ -29,7 +29,7 @@ extern void run(void);
 
 void init_clk()
 {
-	OSCCAL =  208;
+	OSCCAL = 185;// 208; //Calibrate for 12MHz
 	// Set CPU speed by setting clock prescalar:
 	// CCP register must first be written with the correct signature - 0xD8
 	CCP = 0xD8;
